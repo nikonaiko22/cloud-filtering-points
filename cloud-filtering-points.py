@@ -59,6 +59,10 @@ class PointFilterApp:
                 self.df = pd.read_csv(file_path, sep=r'\s+', engine='python', header=None, names=["X", "Y", "Z"])
                 self.filtered_df = None
                 self.plot_points(self.df)
+
+                for field in ["xmin", "xmax", "ymin", "ymax"]:
+                    getattr(self, f"entry_{field}").delete(0, tk.END)
+
                 messagebox.showinfo("Éxito", "Archivo importado correctamente.")
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo leer el archivo:\n{e}")
