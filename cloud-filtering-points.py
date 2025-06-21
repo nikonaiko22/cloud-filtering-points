@@ -88,8 +88,7 @@ class PointFilterApp:
             messagebox.showwarning("Advertencia", "No hay puntos filtrados para exportar.")
             return
 
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt",
-                                                 filetypes=[("TXT Files", "*.txt")])
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("TXT Files", "*.txt")])
         if file_path:
             try:
                 self.filtered_df.to_csv(file_path, sep='\t', index=False, header=False)
@@ -104,15 +103,7 @@ class PointFilterApp:
         self.ax.grid(True, linestyle="--", alpha=0.3)
 
         # Dibujar puntos con tamaño aumentado, borde negro y zorder para que estén sobre la cuadrícula
-        self.ax.scatter(
-            df["X"], df["Y"],
-            s=30,                  # tamaño de puntos más grande
-            alpha=0.8,
-            c="dodgerblue",
-            edgecolors="black",
-            linewidths=0.5,
-            zorder=3               # por encima de la cuadrícula
-        )
+        self.ax.scatter(df["X"], df["Y"], s=30, alpha=0.8, c="dodgerblue", edgecolors="black", linewidths=0.5, zorder=3)
 
         self.ax.set_title(title, fontsize=14, fontweight="bold")
         self.ax.set_xlabel("X", fontsize=12)
