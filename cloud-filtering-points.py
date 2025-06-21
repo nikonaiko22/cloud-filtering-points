@@ -77,6 +77,13 @@ class PointFilterApp:
             messagebox.showerror("Error", "Por favor, ingresa valores numéricos válidos.")
             return
 
+    # Validar que los límites estén bien definidos
+        if xmin > xmax or ymin > ymax:
+            messagebox.showwarning("Límites inválidos",
+                                   "Los valores de mínimo no pueden ser mayores que los de máximo.\n"
+                                   "Verifica Xmin < Xmax y Ymin < Ymax.")
+            return
+        
         self.filtered_df = self.df[
             (self.df["X"] >= xmin) & (self.df["X"] <= xmax) &
             (self.df["Y"] >= ymin) & (self.df["Y"] <= ymax)
