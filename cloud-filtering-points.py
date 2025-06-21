@@ -99,13 +99,26 @@ class PointFilterApp:
 
     def plot_points(self, df, title="Puntos Originales"):
         self.ax.clear()
-        self.ax.scatter(df["X"], df["Y"], s=10, alpha=0.8, c="blue")
-        self.ax.set_title(title)
-        self.ax.set_xlabel("X")
-        self.ax.set_ylabel("Y")
-        self.ax.grid(True)
 
-            # Ajuste automático a los datos con un pequeño margen
+        # Mostrar cuadrícula con estilo suave
+        self.ax.grid(True, linestyle="--", alpha=0.3)
+
+        # Dibujar puntos con tamaño aumentado, borde negro y zorder para que estén sobre la cuadrícula
+        self.ax.scatter(
+            df["X"], df["Y"],
+            s=30,                  # tamaño de puntos más grande
+            alpha=0.8,
+            c="dodgerblue",
+            edgecolors="black",
+            linewidths=0.5,
+            zorder=3               # por encima de la cuadrícula
+        )
+
+        self.ax.set_title(title, fontsize=14, fontweight="bold")
+        self.ax.set_xlabel("X", fontsize=12)
+        self.ax.set_ylabel("Y", fontsize=12)
+
+        # Ajuste automático de ejes con margen
         x_margin = (df["X"].max() - df["X"].min()) * 0.05
         y_margin = (df["Y"].max() - df["Y"].min()) * 0.05
 
@@ -113,7 +126,6 @@ class PointFilterApp:
         self.ax.set_ylim(df["Y"].min() - y_margin, df["Y"].max() + y_margin)
 
         self.canvas.draw()
-
 
 
 if __name__ == "__main__":
