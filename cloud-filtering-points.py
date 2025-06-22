@@ -88,33 +88,46 @@ class PointFilterApp:
 
         ventana = tk.Toplevel(self.root)
         ventana.title("Seleccionar formato de archivo")
-        ventana.geometry("400x200")
+        ventana.geometry("400x300")
         ventana.grab_set()
         tk.Label(ventana, text="¿Qué formato tiene el archivo?", font=("Segoe UI", 12)).pack(pady=20)
 
-        tk.Radiobutton(ventana, text="PNEZD (Punto, Norte, Este, Cota, Descripción)", variable=formato,
-                       value="PNEZD", font=("Segoe UI", 11)).pack(anchor="w", padx=20)
-        tk.Radiobutton(ventana, text="PENZD (Punto, Este, Norte, Cota, Descripción)", variable=formato,
-                       value="PENZD", font=("Segoe UI", 11)).pack(anchor="w", padx=20)
+        formatos = [ ("PNEZD (Punto, Norte, Este, Cota, Descripción)", "PNEZD"),("PENZD (Punto, Este, Norte, Cota, Descripción)", "PENZD"),("ENZD (Este, Norte, Cota, Descripción)", "ENZD"),("NEZD (Norte, Este, Cota, Descripción)", "NEZD"),]
 
+        for texto, valor in formatos:
+            tk.Radiobutton(ventana, text=texto, variable=formato, value=valor, font=("Segoe UI", 11)).pack(anchor="w", padx=20)
+        
         tk.Button(ventana, text="Aceptar", command=seleccionar_formato, bg="#00b894", fg="white").pack(pady=10)
         ventana.wait_window()
 
         if not formato.get():
             return
 
-        try:
-            columnas = ["Punto", "A", "B", "Z", "Descripcion"]  # A y B se intercambian según el formato
+        try:           
+            if formato.get() in ["PNEZD", "PENZD"]:
+                columnas = ["Punto", "A", "B", "Z", "Descripción"] #A y B Serán Intercambiados
+            else: #ENZD o NEZD
+                columnas = ["A", "B", "Z", "Descripción"]
+
             df = pd.read_csv(file_path, sep=',', header=None, names=columnas)
 
+            #asignar columnas x, y dependiendo formato
             if formato.get() == "PNEZD":
-                df.rename(columns={"A": "Y", "B": "X"}, inplace=True)  # Norte = Y, Este = X
-            else:
+                df.rename(columns={"A": "Y", "B": "X"}, inplace=True)
+            elif formato.get() == "PENZD":
                 df.rename(columns={"A": "X", "B": "Y"}, inplace=True)  # Este = X, Norte = Y
+            elif formato.get() == "ENZD":
+                df.rename(columns={"A": "X", "B": "Y"}, inplace=True)  # Este = X, Norte = Y
+            elif formato.get() == "NEZD":
+                df.rename(columns={"A": "Y", "B": "X"}, inplace=True)  # Norte = Y, Este = X
 
-            self.df = df[["X", "Y", "Z", "Descripcion"]] if "Descripcion" in df.columns else df[["X", "Y", "Z"]]
+            columnas_validas = ["X", "Y", "Z"]
+            if "Descripción" in df.columns and not df["Descripción"].isnull().all():
+                columnas_validas.append("Descripción")
+            
+            self.df = df[columnas_validas].dropna(subset=["X", "Y", "Z"])
             self.filtered_df = None
-
+                
             self.detectar_duplicados()
             self.plot_points(self.df)
 
@@ -198,3 +211,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = PointFilterApp(root)
     root.mainloop()
+    
