@@ -173,16 +173,85 @@ class PointFilterApp:
             messagebox.showwarning("Advertencia", "Primero debes importar un archivo.")
             return
 
-         # Usar los datos filtrados si existen, sino usar los originales
         data_to_export = self.filtered_df if self.filtered_df is not None else self.df
 
+        # Seleccionar formato
+        formato = tk.StringVar()
+        delimitador = tk.StringVar()
+
+        def confirmar():
+            opciones.destroy()
+
+        opciones = tk.Toplevel(self.root)
+        opciones.title("Opciones de Exportación")
+        opciones.geometry("400x400")
+        opciones.grab_set()
+
+        tk.Label(opciones, text="Selecciona el formato de exportación:", font=("Segoe UI", 12)).pack(pady=10)
+
+        formatos = [("PNEZD (Punto, Norte, Este, Cota, Descripción)", "PNEZD"), ("PENZD (Punto, Este, Norte, Cota, Descripción)", "PENZD"), ("ENZD (Este, Norte, Cota, Descripción)", "ENZD"), ("NEZD (Norte, Este, Cota, Descripción)", "NEZD")]
+
+        for texto, valor in formatos:
+            tk.Radiobutton(opciones, text=texto, variable=formato, value=valor).pack(anchor="w", padx=20)
+
+        tk.Label(opciones, text="Selecciona el delimitador:", font=("Segoe UI", 12)).pack(pady=10)
+
+        delimitadores = [("Coma (,)", ","), ("Punto y coma (;)", ";"), ("Espacio", " ")]
+
+        for texto, valor in delimitadores:
+            tk.Radiobutton(opciones, text=texto, variable=delimitador, value=valor).pack(anchor="w", padx=20)
+
+        tk.Button(opciones, text="Aceptar", command=confirmar, bg="#0984e3", fg="white").pack(pady=20)
+
+        opciones.wait_window()
+
+        if not formato.get() or not delimitador.get():
+            return
+
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("TXT Files", "*.txt")])
-        if file_path:
-            try:
-                data_to_export.to_csv(file_path, sep='\t', index=False, header=False)
-                messagebox.showinfo("Éxito", f"Archivo exportado:\n{file_path}")
-            except Exception as e:
-                messagebox.showerror("Error", f"No se pudo exportar el archivo:\n{e}")
+        if not file_path:
+            return
+
+        try:
+            export_df = pd.DataFrame()
+
+            if formato.get() == "PNEZD":
+                export_df["Punto"] = range(1, len(data_to_export) + 1)
+                export_df["Norte"] = data_to_export["Y"]
+                export_df["Este"] = data_to_export["X"]
+                export_df["Cota"] = data_to_export["Z"]
+                if "Descripción" in data_to_export.columns:
+                    export_df["Descripción"] = data_to_export["Descripción"]
+
+            elif formato.get() == "PENZD":
+                export_df["Punto"] = range(1, len(data_to_export) + 1)
+                export_df["Este"] = data_to_export["X"]
+                export_df["Norte"] = data_to_export["Y"]
+                export_df["Cota"] = data_to_export["Z"]
+                if "Descripción" in data_to_export.columns:
+                    export_df["Descripción"] = data_to_export["Descripción"]
+
+            elif formato.get() == "ENZD":
+                export_df["Este"] = data_to_export["X"]
+                export_df["Norte"] = data_to_export["Y"]
+                export_df["Cota"] = data_to_export["Z"]
+                if "Descripción" in data_to_export.columns:
+                    export_df["Descripción"] = data_to_export["Descripción"]
+
+            elif formato.get() == "NEZD":
+                export_df["Norte"] = data_to_export["Y"]
+                export_df["Este"] = data_to_export["X"]
+                export_df["Cota"] = data_to_export["Z"]
+                if "Descripción" in data_to_export.columns:
+                    export_df["Descripción"] = data_to_export["Descripción"]
+
+            export_df.to_csv(file_path, sep=delimitador.get(), index=False, header=False)
+
+            messagebox.showinfo("Éxito", f"Archivo exportado correctamente:\n{file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo exportar el archivo:\n{e}")
+
 
     def plot_points(self, df, title="Puntos Originales"):
         self.ax.clear()
