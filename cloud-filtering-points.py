@@ -25,6 +25,13 @@ class PointFilterApp:
         frame_controls = tk.Frame(self.root, bg="#dfe6e9")
         frame_controls.pack(pady=10)
 
+        # Contadores de puntos
+        self.label_total = tk.Label(self.root, text="Total points: 0", font=("Segoe UI", 12), bg="#ecf0f1", fg="#2c3e50")
+        self.label_total.pack()
+
+        self.label_filtered = tk.Label(self.root, text="Filtered points: 0", font=("Segoe UI", 12), bg="#ecf0f1", fg="#2c3e50")
+        self.label_filtered.pack()
+
         # Botón importar
         btn_import = tk.Button(frame_controls, text="Importar TXT", font=("Segoe UI", 12),
                                command=self.import_txt, bg="#0984e3", fg="white")
@@ -60,6 +67,9 @@ class PointFilterApp:
                 self.filtered_df = None
                 self.plot_points(self.df)
 
+                self.label_total.config(text=f"Total points: {len(self.df)}")
+                self.label_filtered.config(text="Filtered points: 0")
+
                 for field in ["xmin", "xmax", "ymin", "ymax"]:
                     getattr(self, f"entry_{field}").delete(0, tk.END)
 
@@ -91,6 +101,7 @@ class PointFilterApp:
             (self.df["Y"] >= ymin) & (self.df["Y"] <= ymax)
         ]
         self.plot_points(self.filtered_df, title="Puntos Filtrados")
+        self.label_filtered.config(text=f"Filtered points: {len(self.filtered_df)}")
 
     def export_txt(self):
         if self.filtered_df is None or self.filtered_df.empty:
