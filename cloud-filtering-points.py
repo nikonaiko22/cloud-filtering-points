@@ -59,23 +59,75 @@ class PointFilterApp:
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.root)
         self.canvas.get_tk_widget().pack(pady=10)
 
+    def detectar_duplicados(self):
+        if self.df is None:
+            return
+        
+        duplicados = self.df.duplicated()
+        cantidad = duplicados.sum()
+
+        if cantidad > 0:
+            respuesta = messagebox.askyesno("Puntos duplicados", f"Se detectaron {cantidad} puntos duplicados.\n¿Deseas eliminarlos?")
+            
+            if respuesta:
+                self.df = self.df.drop_duplicates().reset_index(drop=True)
+                messagebox.showinfo("Limpieza completada", f"Se eliminaron {cantidad} duplicados.")
+            else:
+                messagebox.showinfo("Aviso", "Los duplicados se han conservado")
+            
     def import_txt(self):
-        file_path = filedialog.askopenfilename(filetypes=[("TXT Files", "*.txt")])
-        if file_path:
-            try:
-                self.df = pd.read_csv(file_path, sep=r'\s+', engine='python', header=None, names=["X", "Y", "Z"])
-                self.filtered_df = None
-                self.plot_points(self.df)
+        file_path = filedialog.askopenfilename(filetypes=[("Archivos de texto o CSV", "*.txt *.csv")])
+        if not file_path:
+            return
 
-                self.label_total.config(text=f"Total points: {len(self.df)}")
-                self.label_filtered.config(text="Filtered points: 0")
+        # Preguntar formato de entrada
+        formato = tk.StringVar()
 
-                for field in ["xmin", "xmax", "ymin", "ymax"]:
-                    getattr(self, f"entry_{field}").delete(0, tk.END)
+        def seleccionar_formato():
+            ventana.destroy()
 
-                messagebox.showinfo("Éxito", "Archivo importado correctamente.")
-            except Exception as e:
-                messagebox.showerror("Error", f"No se pudo leer el archivo:\n{e}")
+        ventana = tk.Toplevel(self.root)
+        ventana.title("Seleccionar formato de archivo")
+        ventana.geometry("400x200")
+        ventana.grab_set()
+        tk.Label(ventana, text="¿Qué formato tiene el archivo?", font=("Segoe UI", 12)).pack(pady=20)
+
+        tk.Radiobutton(ventana, text="PNEZD (Punto, Norte, Este, Cota, Descripción)", variable=formato,
+                       value="PNEZD", font=("Segoe UI", 11)).pack(anchor="w", padx=20)
+        tk.Radiobutton(ventana, text="PENZD (Punto, Este, Norte, Cota, Descripción)", variable=formato,
+                       value="PENZD", font=("Segoe UI", 11)).pack(anchor="w", padx=20)
+
+        tk.Button(ventana, text="Aceptar", command=seleccionar_formato, bg="#00b894", fg="white").pack(pady=10)
+        ventana.wait_window()
+
+        if not formato.get():
+            return
+
+        try:
+            columnas = ["Punto", "A", "B", "Z", "Descripcion"]  # A y B se intercambian según el formato
+            df = pd.read_csv(file_path, sep=',', header=None, names=columnas)
+
+            if formato.get() == "PNEZD":
+                df.rename(columns={"A": "Y", "B": "X"}, inplace=True)  # Norte = Y, Este = X
+            else:
+                df.rename(columns={"A": "X", "B": "Y"}, inplace=True)  # Este = X, Norte = Y
+
+            self.df = df[["X", "Y", "Z", "Descripcion"]] if "Descripcion" in df.columns else df[["X", "Y", "Z"]]
+            self.filtered_df = None
+
+            self.detectar_duplicados()
+            self.plot_points(self.df)
+
+            self.label_total.config(text=f"Total points: {len(self.df)}")
+            self.label_filtered.config(text="Filtered points: 0")
+
+            for field in ["xmin", "xmax", "ymin", "ymax"]:
+                getattr(self, f"entry_{field}").delete(0, tk.END)
+
+            messagebox.showinfo("Éxito", "Archivo importado correctamente.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo leer el archivo:\n{e}")
 
     def filtrar_puntos(self):
         if self.df is None:
@@ -104,14 +156,17 @@ class PointFilterApp:
         self.label_filtered.config(text=f"Filtered points: {len(self.filtered_df)}")
 
     def export_txt(self):
-        if self.filtered_df is None or self.filtered_df.empty:
-            messagebox.showwarning("Advertencia", "No hay puntos filtrados para exportar.")
+        if self.df is None:
+            messagebox.showwarning("Advertencia", "Primero debes importar un archivo.")
             return
+
+         # Usar los datos filtrados si existen, sino usar los originales
+        data_to_export = self.filtered_df if self.filtered_df is not None else self.df
 
         file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("TXT Files", "*.txt")])
         if file_path:
             try:
-                self.filtered_df.to_csv(file_path, sep='\t', index=False, header=False)
+                data_to_export.to_csv(file_path, sep='\t', index=False, header=False)
                 messagebox.showinfo("Éxito", f"Archivo exportado:\n{file_path}")
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo exportar el archivo:\n{e}")
